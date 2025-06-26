@@ -10,6 +10,14 @@ const POSTS_QUERY = `*[
 
 export const Route = createFileRoute("/")({
 	component: Home,
+	loader: ({ context }) => {
+		context.queryClient.ensureQueryData({
+			queryKey: ["post"],
+			queryFn: () => {
+				return client.fetch<SanityDocument[]>(POSTS_QUERY);
+			},
+		});
+	},
 });
 
 function Home() {

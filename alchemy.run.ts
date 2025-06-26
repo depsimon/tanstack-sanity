@@ -1,5 +1,10 @@
 import alchemy from "alchemy";
-import { DOStateStore, KVNamespace, TanStackStart } from "alchemy/cloudflare";
+import {
+	DOStateStore,
+	KVNamespace,
+	TanStackStart,
+	WranglerJson,
+} from "alchemy/cloudflare";
 
 const APP_NAME = process.env.APP_NAME ?? "tanstack-sanity";
 const STAGE = process.env.STAGE ?? "dev";
@@ -32,11 +37,20 @@ const defaultKv = await KVNamespace(`${APP_NAME}-${STAGE}-kv`, {
 });
 
 export const website = await TanStackStart(`${APP_NAME}-${STAGE}-website`, {
+	projectRoot: `${process.cwd()}/apps/web`,
+	command: `bun run --filter '*/web' build`,
+	main: ".output/server/index.mjs",
+	assets: `${process.cwd()}/apps/web/.output/public`,
 	bindings: {
 		DEFAULT_KV: defaultKv,
 		VITE_SANITY_DATASET: process.env.VITE_SANITY_DATASET,
 		VITE_SANITY_PROJECT_ID: process.env.VITE_SANITY_PROJECT_ID,
 	},
+});
+
+await WranglerJson("wrangler.jsonc", {
+	worker: website,
+	path: `${process.cwd()}/apps/web/wrangler.jsonc`,
 });
 
 console.log({

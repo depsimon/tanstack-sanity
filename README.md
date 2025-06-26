@@ -6,6 +6,7 @@ This site is built with TanStack Start!
 
 This template uses the following tools:
 
+- [Sanity](https://www.sanity.io/) as the content manager
 - [Bun](https://bun.sh/docs) as the package manager
 - [Biome](https://biomejs.dev/) as the linter & formatter
 - [Lefthook](https://lefthook.dev/) as the git hooks manager
