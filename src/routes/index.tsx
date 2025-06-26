@@ -1,66 +1,38 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { toast } from "sonner";
-import { getCountCookie, updateCountCookie } from "~/functions/count-cookie";
-import { getCountDb, updateCountDb } from "~/functions/count-db";
-import { getCountKv, updateCountKv } from "~/functions/count-kv";
+import type { SanityDocument } from "@sanity/client";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { client } from "~/sanity/client";
+
+const POSTS_QUERY = `*[
+  _type == "post"
+  && defined(slug.current)
+]|order(publishedAt desc)[0...12]{_id, title, slug, publishedAt}`;
 
 export const Route = createFileRoute("/")({
 	component: Home,
-	loader: async () => {
-		const [countCookie, countDb, countKv] = await Promise.all([
-			getCountCookie(),
-			getCountDb(),
-			getCountKv(),
-		]);
-
-		return {
-			countCookie,
-			countDb,
-			countKv,
-		};
-	},
 });
 
 function Home() {
-	const router = useRouter();
-	const { countCookie, countDb, countKv } = Route.useLoaderData();
+	const { data: posts } = useSuspenseQuery({
+		queryKey: ["post"],
+		queryFn: () => {
+			return client.fetch<SanityDocument[]>(POSTS_QUERY);
+		},
+	});
 
 	return (
-		<div className="flex items-center gap-4">
-			<button
-				type="button"
-				onClick={() => {
-					updateCountCookie({ data: 1 }).then(() => {
-						toast.success("Count updated with success!");
-						router.invalidate();
-					});
-				}}
-			>
-				Add 1 to {countCookie}? (Cookies)
-			</button>
-			<button
-				type="button"
-				onClick={() => {
-					updateCountKv({ data: 1 }).then(() => {
-						toast.success("Count updated with success!");
-						router.invalidate();
-					});
-				}}
-			>
-				Add 1 to {countKv}? (KV)
-			</button>
-			<button
-				type="button"
-				onClick={() => {
-					updateCountDb({ data: 1 }).then(() => {
-						toast.success("Count updated with success!");
-						router.invalidate();
-					});
-				}}
-			>
-				Add 1 to {countDb}? (DB)
-			</button>
-			|<Link to="/about">ℹ About</Link>
-		</div>
+		<main className="container mx-auto min-h-screen max-w-3xl p-8">
+			<h1 className="text-4xl font-bold mb-8">Posts</h1>
+			<ul className="flex flex-col gap-y-4">
+				{posts.map((post) => (
+					<li className="hover:underline" key={post._id}>
+						<Link to="/posts/$slug" params={{ slug: post.slug.current }}>
+							<h2 className="text-xl font-semibold">{post.title}</h2>
+							<p>{new Date(post.publishedAt).toLocaleDateString()}</p>
+						</Link>
+					</li>
+				))}
+			</ul>
+		</main>
 	);
 }
