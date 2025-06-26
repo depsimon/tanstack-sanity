@@ -9,9 +9,12 @@ import {
 const APP_NAME = process.env.APP_NAME ?? "tanstack-sanity";
 const STAGE = process.env.STAGE ?? "dev";
 
-if (!process.env.VITE_SANITY_DATASET || !process.env.VITE_SANITY_PROJECT_ID) {
+if (
+	!process.env.SANITY_STUDIO_DATASET ||
+	!process.env.SANITY_STUDIO_PROJECT_ID
+) {
 	throw new Error(
-		"You need to setup a VITE_SANITY_DATASET & VITE_SANITY_PROJECT_ID env variable in your .env",
+		"You need to setup a SANITY_STUDIO_DATASET & SANITY_STUDIO_PROJECT_ID env variable in your .env",
 	);
 }
 
@@ -43,8 +46,8 @@ export const website = await TanStackStart(`${APP_NAME}-${STAGE}-website`, {
 	assets: `${process.cwd()}/apps/web/.output/public`,
 	bindings: {
 		DEFAULT_KV: defaultKv,
-		VITE_SANITY_DATASET: process.env.VITE_SANITY_DATASET,
-		VITE_SANITY_PROJECT_ID: process.env.VITE_SANITY_PROJECT_ID,
+		SANITY_STUDIO_DATASET: process.env.SANITY_STUDIO_DATASET,
+		SANITY_STUDIO_PROJECT_ID: process.env.SANITY_STUDIO_PROJECT_ID,
 	},
 });
 

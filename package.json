@@ -15,7 +15,10 @@
 		"format": "biome format ./ --fix",
 		"lint": "biome lint ./ --fix",
 		"postinstall": "lefthook install",
-		"typecheck": "bun run --elide-lines 0 --filter '*' typecheck"
+		"studio:dev": "bun run --env-file=.env --elide-lines 0 --filter '*/studio' dev",
+		"studio:deploy": "bun run --elide-lines 0 --filter '*/studio' deploy",
+		"typecheck": "bun run --elide-lines 0 --filter '*' typecheck",
+		"web:dev": "bun run --elide-lines 0 --filter '*/web' dev"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.0.5",
