@@ -2,12 +2,17 @@ import alchemy from "alchemy";
 import {
 	DOStateStore,
 	KVNamespace,
+	R2Bucket,
 	TanStackStart,
+	Worker,
 	WranglerJson,
 } from "alchemy/cloudflare";
+import { Exec } from "alchemy/os";
 
 const APP_NAME = process.env.APP_NAME ?? "tanstack-sanity";
 const STAGE = process.env.STAGE ?? "dev";
+
+const isDetroying = process.argv.includes("--destroy");
 
 if (
 	!process.env.SANITY_STUDIO_DATASET ||
@@ -20,7 +25,7 @@ if (
 
 const app = await alchemy(`${APP_NAME}-cloudflare`, {
 	stage: STAGE,
-	phase: process.argv.includes("--destroy") ? "destroy" : "up",
+	phase: isDetroying ? "destroy" : "up",
 	stateStore:
 		process.env.ALCHEMY_STATE_STORE === "cloudflare"
 			? (scope) =>
@@ -32,6 +37,28 @@ const app = await alchemy(`${APP_NAME}-cloudflare`, {
 						},
 					})
 			: undefined,
+});
+
+const r2Bucket = await R2Bucket(`${APP_NAME}-${STAGE}-r2`, {
+	name: `${APP_NAME}-${STAGE}-r2`,
+	adopt: true,
+	empty: true,
+	allowPublicAccess: true,
+	// jurisdiction: "eu",
+});
+
+const r2Worker = await Worker(`${APP_NAME}-${STAGE}-r2-manager`, {
+	projectRoot: `${process.cwd()}/apps/r2-manager`,
+	entrypoint: "index.ts",
+	adopt: true,
+	bindings: {
+		R2_BUCKET: r2Bucket,
+		SECRET: process.env.R2_SANITY_SECRET,
+		ALLOWED_ORIGINS: [
+			"http://localhost:3333",
+			"https://sanity-studio.com",
+		].join(","),
+	},
 });
 
 const defaultKv = await KVNamespace(`${APP_NAME}-${STAGE}-kv`, {
@@ -56,8 +83,19 @@ await WranglerJson("wrangler.jsonc", {
 	path: `${process.cwd()}/apps/web/wrangler.jsonc`,
 });
 
+if (!isDetroying) {
+	const sanity = await Exec(`${APP_NAME}-${STAGE}-studio`, {
+		command: `bun run studio:deploy`,
+		env: {
+			SANITY_STUDIO_R2_WORKER_URL: r2Worker.url,
+			SANITY_STUDIO_R2_URL: process.env.SANITY_STUDIO_R2_URL,
+		},
+	});
+}
+
 console.log({
-	url: website.url,
+	r2Manager: r2Worker.url,
+	website: website.url,
 });
 
 await app.finalize();

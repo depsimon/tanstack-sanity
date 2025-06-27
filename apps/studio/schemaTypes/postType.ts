@@ -24,7 +24,7 @@ export const postType = defineType({
 		}),
 		defineField({
 			name: "image",
-			type: "image",
+			type: "r2-files.media",
 		}),
 		defineField({
 			name: "body",

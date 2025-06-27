@@ -1,0 +1,11 @@
+{
+	"include": ["**/*.ts"],
+	"compilerOptions": {
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"lib": ["ES2022"],
+		"target": "ES2022",
+		"noEmit": true,
+		"types": ["@cloudflare/workers-types"]
+	}
+}
